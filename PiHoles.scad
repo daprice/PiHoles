@@ -5,12 +5,12 @@
 //© 2016 Dale Price
 
 //Pi dimensions sourced from https://www.raspberrypi.org/documentation/hardware/raspberrypi/mechanical/
-//Currently supports "1B", "1A+", "1B+", "2B", "3B", "Zero"
+//Currently supports "1B", "1A+", "1B+", "2B", "3B", "4B", "Zero"
 
 //get vector of [x,y] vectors of locations of mounting holes based on Pi version
-function piHoleLocations (board="3B") = 
-	(board=="1A+" || board=="1B+" || board=="2B" || board=="3B") ?
-		[[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]] : //pi 1B+, 2B, 3B
+function piHoleLocations (board="4B") = 
+	(board=="1A+" || board=="1B+" || board=="2B" || board=="3B" || board=="4B") ?
+		[[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]] : //pi 1B+, 2B, 3B, 4B
 	(board=="Zero") ?
 		[[3.5, 3.5], [61.5, 3.5], [3.5, 26.5], [61.5, 26.5]] : //pi zero
 	(board=="1B") ?
@@ -19,40 +19,56 @@ function piHoleLocations (board="3B") =
 
 //get vector of [x,y,z] dimensions of board
 //	dimensions are for PCB only, not ports or anything else
-function piBoardDim (board="3B") =
-	(board=="1B" || board=="1B+" || board=="2B" || board=="3B") ?
+function piBoardDim (board="4B") =
+	(board=="1B" || board=="1B+" || board=="2B" || board=="3B" || board=="4B") ?
 		[85, 56, 1.25] :
 	(board=="Zero") ?
 		[65, 30, 1.25] :
 	(board == "1A+") ?
 		[65, 56, 1.25] :
-	[0,0,0];
+	[]; //invalid board
 
+function piRounding (board="4B") =
+	(board == "1A+" || board=="1B+" || board=="2B" || board=="3B" || board=="4B" || board=="Zero") ?
+		3 :
+	(board=="1B") ?
+		0 :
+	 0; //invalid board
+    
 //Mounting holes for a Raspberry Pi of the specified version
 //	Parameters
 //		board: the version of the raspberry pi to generate holes for
 //		depth: the depth of the holes in mm
 module piHoles (board, depth = 5, preview=true) {
-	hd = 2.8; //radius of pi mounting holes plus a tiny bit extra to account for shrinkage when 3D printing
-	hr = hd/2;
-
+	hd = 2.8; //Diameter of pi mounting holes plus a tiny bit extra to account for shrinkage when 3D printing
+    
 	//preview of the board itself
 	if(preview==true)
 		% piBoard(board);
 	
 	//mounting holes
 	for(holePos = piHoleLocations(board)) {
-		translate([holePos[0], holePos[1], -depth]) cylinder(d=hd, h=depth);
+		translate([holePos[0], holePos[1], -0.001])
+                cylinder(piBoardDim(board)[2] + 0.002, d=hd, false);
 	}
 }
 
 //Preview of board dimensions for Raspberry Pi of the specified version
 module piBoard (board) {
-	difference() {
-		cube(piBoardDim(board), center=false);
-		translate([0,0,piBoardDim(board)[2] + 0.01]) piHoles(board, piBoardDim(board)[2] + 0.02, false);
-	}
+    length = piBoardDim(board)[0];
+    width = piBoardDim(board)[1];
+    height = piBoardDim(board)[2];
+    radius = piRounding(board);
 
+    difference() {
+        translate([piRounding(board), piRounding(board),0])
+            minkowski() {
+                cube([length - radius*2, width - radius*2, height-0.1], center=false);
+                cylinder(0.1, r=radius, false);
+            }
+        piHoles(board, height, false);
+    }
+    
 	//warn about possible inaccuracy of boards that don't currently have official documentation
 	if(board == "1B") {
 		echo("CAUTION: The mounting hole positions for the board you have selected may not be accurate because the Raspberry Pi Foundation does not currently provide official mechanical drawings for it.");
@@ -85,7 +101,10 @@ module piPosts(board, height=5, preview=true) {
 
 color("DarkGreen", 1, $fn=20) {
 	piBoard("1B");
-	translate([100,0,0]) piBoard("1A+");
-	translate([0,80,0]) piBoard("2B");
-	translate([100,80,0]) piBoard("Zero");
+    translate([0,70,0]) piBoard("1A+");
+    translate([0,140,0]) piBoard("1B+");
+	translate([100,0,0]) piBoard("2B");
+	translate([100,70,0]) piBoard("Zero");
+    translate([200,0,0]) piBoard("3B");
+    translate([200,70,0]) piBoard("4B");
 }
