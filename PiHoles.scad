@@ -1,4 +1,4 @@
-//Shut your Pi Hole! 
+//Shut your Pi Hole!
 //An OpenSCAD library to assist with designing Raspberry Pi accessories
 
 //This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.
@@ -8,8 +8,8 @@
 //Currently supports "1B", "1A+", "1B+", "2B", "3B", "Zero"
 
 //get vector of [x,y] vectors of locations of mounting holes based on Pi version
-function piHoleLocations (board="3B") = 
-	(board=="1A+" || board=="1B+" || board=="2B" || board=="3B") ?
+function piHoleLocations (board="3B") =
+	(board=="1A+" || board=="1B+" || board=="2B" || board=="3A+" || board=="3B") ?
 		[[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]] : //pi 1B+, 2B, 3B
 	(board=="Zero") ?
 		[[3.5, 3.5], [61.5, 3.5], [3.5, 26.5], [61.5, 26.5]] : //pi zero
@@ -24,7 +24,7 @@ function piBoardDim (board="3B") =
 		[85, 56, 1.25] :
 	(board=="Zero") ?
 		[65, 30, 1.25] :
-	(board == "1A+") ?
+	(board == "1A+" || board=="3A+") ?
 		[65, 56, 1.25] :
 	[0,0,0];
 
@@ -39,7 +39,7 @@ module piHoles (board, depth = 5, preview=true) {
 	//preview of the board itself
 	if(preview==true)
 		% piBoard(board);
-	
+
 	//mounting holes
 	for(holePos = piHoleLocations(board)) {
 		translate([holePos[0], holePos[1], -depth]) cylinder(d=hd, h=depth);
@@ -74,7 +74,7 @@ module piPosts(board, height=5, preview=true) {
 
 		translate([0, 0.4, height]) scale([1.1, 1.1, 1]) cylinder(d=2, h=0.5);
 	}
-	
+
 	for(holePos = piHolePos) {
 		translate([holePos[0], holePos[1], 0]) pcbPost(height);
 	}
